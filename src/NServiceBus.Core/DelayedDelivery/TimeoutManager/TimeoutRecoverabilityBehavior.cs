@@ -9,17 +9,18 @@ namespace NServiceBus
 
     class TimeoutRecoverabilityBehavior
     {
-        public TimeoutRecoverabilityBehavior(string errorQueueAddress, string localAddress, IDispatchMessages dispatcher, CriticalError criticalError)
+        public TimeoutRecoverabilityBehavior(string errorQueueAddress, string localAddress, IDispatchMessages dispatcher, CriticalError criticalError, TimeoutFailureInfoStorage failureInfoStorage)
         {
             this.localAddress = localAddress;
             this.errorQueueAddress = errorQueueAddress;
             this.dispatcher = dispatcher;
             this.criticalError = criticalError;
+            this.failureInfoStorage = failureInfoStorage;
         }
 
         public async Task Invoke(PushContext context, Func<Task> next)
         {
-            var failureInfo = failures.GetFailureInfoForMessage(context.MessageId);
+            var failureInfo = failureInfoStorage.GetFailureInfoForMessage(context.MessageId);
 
             if (ShouldAttemptAnotherRetry(failureInfo))
             {
@@ -30,7 +31,7 @@ namespace NServiceBus
                 }
                 catch (Exception exception)
                 {
-                    failures.RecordFailureInfoForMessage(context.MessageId, exception);
+                    failureInfoStorage.RecordFailureInfoForMessage(context.MessageId, exception);
 
                     Logger.Debug($"Going to retry message '{context.MessageId}' from satellite '{localAddress}' because of an exception:", exception);
 
@@ -39,7 +40,7 @@ namespace NServiceBus
                 }
             }
 
-            failures.ClearFailureInfoForMessage(context.MessageId);
+            failureInfoStorage.ClearFailureInfoForMessage(context.MessageId);
 
             Logger.Debug($"Giving up Retries for message '{context.MessageId}' from satellite '{localAddress}' after {failureInfo.NumberOfFailedAttempts} attempts.");
 
@@ -77,10 +78,10 @@ namespace NServiceBus
         }
 
         CriticalError criticalError;
+        TimeoutFailureInfoStorage failureInfoStorage;
         IDispatchMessages dispatcher;
         string errorQueueAddress;
 
-        TimeoutFailureInfoStorage failures = new TimeoutFailureInfoStorage();
         string localAddress;
 
         const int MaxNumberOfFailedRetries = 4;
