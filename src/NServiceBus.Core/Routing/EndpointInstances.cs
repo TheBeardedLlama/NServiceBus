@@ -47,7 +47,14 @@ namespace NServiceBus.Routing
         public void Add(IEnumerable<EndpointInstance> instances)
         {
             Guard.AgainstNull(nameof(instances), instances);
-            var endpointsByName = instances.GroupBy(i => i.Endpoint);
+            var endpointsByName = instances.Select(i =>
+            {
+                if (i == null)
+                {
+                    throw new ArgumentNullException(nameof(instances), "One of the elements of collection is null");
+                }
+                return i;
+            }).GroupBy(i => i.Endpoint);
             foreach (var instanceGroup in endpointsByName)
             {
                 rules.Add(e => StaticRule(e, instanceGroup.Key, instanceGroup));
