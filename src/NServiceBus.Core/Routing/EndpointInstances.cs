@@ -35,13 +35,13 @@ namespace NServiceBus.Routing
         }
 
         /// <summary>
-        /// Registeres provided endpoint instances.
+        /// Registers provided endpoint instances.
         /// </summary>
         /// <param name="instances">A static list of endpoint instances.</param>
         public void Add(params EndpointInstance[] instances) => Add((IEnumerable<EndpointInstance>)instances);
 
         /// <summary>
-        /// Registeres provided endpoint instances.
+        /// Registers provided endpoint instances.
         /// </summary>
         /// <param name="instances">A static list of endpoint instances.</param>
         public void Add(IEnumerable<EndpointInstance> instances)
